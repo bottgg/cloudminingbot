@@ -1,5 +1,6 @@
 aiogram==3.0.0b6
 flask==2.1.2
+Werkzeug==2.2.2
 asyncpg
 aiosqlite
 bitcoinlib
