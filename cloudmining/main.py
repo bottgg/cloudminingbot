@@ -27,12 +27,6 @@ async def main():
     #await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
-app = Flask(__name__)
-
-@app.route('/')
-def index():
-    return 'Hello, World!'
-
 if __name__ == "__main__":
     # Start asyncio event loop in the main thread
     asyncio.run(main())
