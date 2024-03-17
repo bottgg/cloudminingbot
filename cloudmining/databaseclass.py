@@ -69,6 +69,14 @@ class UserDb:
             await con.close()
 
     @staticmethod
+    async def get_balance(_id: int):
+        con = await asyncpg.connect(user=user, password=password, database=database, host=host)
+        try:
+            return await con.fetchval('select balance from users where id = $1', _id)
+        finally:
+            await con.close()
+
+    @staticmethod
     async def get_refs(_id: int):
         con = await asyncpg.connect(user=user, password=password, database=database, host=host)
         try:
