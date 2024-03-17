@@ -13,7 +13,7 @@ password = "AeT8hs9lOLSq"
 database = "neondb"
 host = "ep-weathered-resonance-391969.eu-central-1.aws.neon.tech"
 
-token = '7012652197:AAFIws6SFmEVGnn-KKlP_Gg0R_mZ13vCRkA'
+token = '7012652197:AAH5qrCcGPU_SxhxgE6PqVgUqKXBzywifsQ'
 
 class UserDb:
     def __init__(self, message: Message):
