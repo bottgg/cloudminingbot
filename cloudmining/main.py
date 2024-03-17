@@ -2,7 +2,7 @@ import asyncio
 from aiogram import Router
 from aiogram import Bot, Dispatcher
 from admin import mainadm, mailing, count, sql, senddb, op, ref
-from bot import mainbot
+from bot import mainbot, mainrouter
 from aiogram.fsm.storage.memory import MemoryStorage
 from databaseclass import ChannelDb, token
 from background import keep_alive
@@ -20,8 +20,9 @@ async def main():
         senddb.router,
         op.router,
         ref.router,
-        mainbot.router
-    ]
+        mainbot.router,
+        mainrouter.router
+               ]
     for i in routers:
         dp.include_router(i)
     #await bot.delete_webhook(drop_pending_updates=True)
