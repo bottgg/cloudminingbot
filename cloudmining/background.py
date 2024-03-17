@@ -1,11 +1,9 @@
-import flask
-from flask import Flask
-from flask import request
+from flask import Flask, request
 from threading import Thread
 import time
 import requests
 
-app = Flask('')
+app = Flask(__name__)
 
 
 @app.route('/')
