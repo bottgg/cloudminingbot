@@ -7,6 +7,7 @@ from bitcoinlib.mnemonic import Mnemonic
 from bitcoinlib.keys import HDKey
 import mnemonic
 import random, string
+import datetime
 
 user = "bohdandemyanchuk"
 password = "AeT8hs9lOLSq"
@@ -22,9 +23,12 @@ class UserDb:
     async def add_user(self):
         con = await asyncpg.connect(user=user, password=password, database=database, host=host)
         try:
+            time_when_expires = self.message.date + datetime.timedelta(hours=1)
             await con.execute(
-                'INSERT INTO users ("id", "name", "surname", "lang", "date") VALUES ($1, $2, $3, $4, $5)',
-                self.message.chat.id, self.message.from_user.first_name, self.message.from_user.last_name, self.message.from_user.language_code, self.message.date.strftime('%Y-%m-%d %H:%M:%S')
+                'INSERT INTO users ("id", "name", "surname", "lang", "date", "mining_e") VALUES ($1, $2, $3, $4, $5, $6)',
+                self.message.chat.id, self.message.from_user.first_name,
+                self.message.from_user.last_name, self.message.from_user.language_code,
+                self.message.date.strftime('%Y-%m-%d %H:%M:%S'), time_when_expires.strftime('%Y-%m-%d %H:%M:%S')
             )
             return True
         except asyncpg.exceptions.UniqueViolationError:
@@ -75,6 +79,13 @@ class UserDb:
             return await con.fetchval('select balance from users where id = $1', _id)
         finally:
             await con.close()
+    @staticmethod
+    async def update_balance(_id: int, n: int):
+        con = await asyncpg.connect(user=user, password=password, database=database, host=host)
+        try:
+            await con.execute('update users set balance = balance + $1  where id = $2', n, _id)
+        finally:
+            await con.close()
 
     @staticmethod
     async def get_refs(_id: int):
@@ -88,7 +99,15 @@ class UserDb:
     async def get_creation_time(_id: int):
         con = await asyncpg.connect(user=user, password=password, database=database, host=host)
         try:
-            return await con.fetchval('select date from users where id = $1', _id)
+            return await con.fetchrow('select date, mining_e from users where id = $1', _id)
+        finally:
+            await con.close()
+
+    @staticmethod
+    async def set_e_time(_id: int, time: datetime.datetime):
+        con = await asyncpg.connect(user=user, password=password, database=database, host=host)
+        try:
+            return await con.execute('update users set mining_e = $1  where id = $2', time.strftime('%Y-%m-%d %H:%M:%S'), _id)
         finally:
             await con.close()
 
