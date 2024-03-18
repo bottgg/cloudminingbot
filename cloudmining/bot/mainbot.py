@@ -60,11 +60,25 @@ async def refs(message: Message):
     th = 0.00000006
     refs = await UserDb.get_refs(message.chat.id)
     hashrate = 50+(refs*5)
-    date_string = await UserDb.get_creation_time(message.chat.id)
+    data = await UserDb.get_creation_time(message.chat.id)
+    date_string = data["date"]
+    date_mining_e = data["mining_e"]
     datetime_object = datetime.datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S")
-    time_passed = datetime.datetime.utcnow() - datetime_object
-    balance = format((th*hashrate)*(time_passed.total_seconds()/3600), ".8f")
-    await message.answer(f"🆔 Your balance is:\n{balance} BTC\n{round(float(balance)*float(kurs['bpi']['USD']['rate_float']), 2)}$")
+    mining_e_object = datetime.datetime.strptime(date_mining_e, "%Y-%m-%d %H:%M:%S")
+    balance = 0
+    active_mining = ""
+    if datetime.datetime.utcnow() < mining_e_object:
+        time_passed = datetime.datetime.utcnow() - datetime_object
+        print(time_passed.total_seconds())
+        balance = format((th * hashrate) * (time_passed.total_seconds() / 3600), ".8f")
+        active_mining = f"You have mining activities:\nSHA256 till {date_mining_e}"
+    else:
+        active_mining = f"You have no mining activities"
+        time_passed = mining_e_object - datetime_object
+        balance = format((th * hashrate) * (time_passed.total_seconds() / 3600), ".8f")
+    buttons = [[InlineKeyboardButton(text="🔄Spaw to USD", callback_data=f"swap")]]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    await message.answer(f"{active_mining}\nBalance is:\n{balance} BTC\n{round(float(balance)*float(kurs['bpi']['USD']['rate_float']), 2)}$", reply_markup=keyboard)
 
 @router.message(Text(text="Account"))
 async def refs(message: Message):
