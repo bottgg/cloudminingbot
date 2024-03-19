@@ -9,15 +9,17 @@ from aiogram import Bot
 import sys
 import datetime
 sys.path.append('..')
-from databaseclass import UserDb, RefDb, token
+from databaseclass import *
 from aiogram.utils.deep_linking import create_start_link
 import aiohttp
+import json
 
 bot = Bot(token=token, parse_mode="HTML")
 router = Router()
 
 class Addr_set(StatesGroup):
     addr = State()
+
 
 @router.message(Command(commands=['start']))
 async def greets(message: Message, command: CommandObject):
@@ -61,24 +63,11 @@ async def refs(message: Message):
     refs = await UserDb.get_refs(message.chat.id)
     hashrate = 50+(refs*5)
     data = await UserDb.get_creation_time(message.chat.id)
-    date_string = data["date"]
-    date_mining_e = data["mining_e"]
-    datetime_object = datetime.datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S")
-    mining_e_object = datetime.datetime.strptime(date_mining_e, "%Y-%m-%d %H:%M:%S")
-    balance = 0
-    active_mining = ""
-    if datetime.datetime.utcnow() < mining_e_object:
-        time_passed = datetime.datetime.utcnow() - datetime_object
-        print(time_passed.total_seconds())
-        balance = format((th * hashrate) * (time_passed.total_seconds() / 3600), ".8f")
-        active_mining = f"You have mining activities:\nSHA256 till {date_mining_e}"
-    else:
-        active_mining = f"You have no mining activities"
-        time_passed = mining_e_object - datetime_object
-        balance = format((th * hashrate) * (time_passed.total_seconds() / 3600), ".8f")
-    buttons = [[InlineKeyboardButton(text="🔄Spaw to USD", callback_data=f"swap")]]
+    balance = count_farm(data)
+    active_mining = create_active_products_string(data)
+    buttons = [[InlineKeyboardButton(text="📤Withdraw", callback_data="withdraw")]]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
-    await message.answer(f"{active_mining}\nBalance is:\n{balance} BTC\n{round(float(balance)*float(kurs['bpi']['USD']['rate_float']), 2)}$", reply_markup=keyboard)
+    await message.answer(f"Active miners:\n{active_mining}\nBalance is:\n{balance} BTC\n{round(float(balance)*float(kurs['bpi']['USD']['rate_float']), 2)}$", reply_markup=keyboard)
 
 @router.message(Text(text="Account"))
 async def refs(message: Message):
@@ -114,3 +103,10 @@ async def getid(message: Message, state: FSMContext):
 @router.message(Text(text="Referals"))
 async def refs(message: Message):
     await message.answer(f"You can get 5 TeraHash for every referee you invite\nYour referal link: {await create_start_link(bot, str(message.chat.id))}")
+
+
+
+
+
+
+
