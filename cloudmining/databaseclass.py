@@ -330,7 +330,7 @@ def create_active_products_string(input_array):
 
         if time_e > utcnow:  # If time_e is in the future
             when_expires = time_e.strftime("%Y-%m-%d %H:%M:%S")
-            active_products_string += f"{name}\n{when_expires}\n"
+            active_products_string += f"➖➖➖➖➖➖\n🧮Miner name: {name}\n🕒Works till:{when_expires}\n\n"
     print("ac", active_products_string)
     return active_products_string if active_products_string != "" else "You have no active miners\n"
 
