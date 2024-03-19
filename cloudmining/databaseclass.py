@@ -1,7 +1,7 @@
 import asyncpg
 from aiogram.types import Message
 from mnemonic import Mnemonic
-
+import json
 from bitcoinlib.wallets import Wallet, wallet_delete
 from bitcoinlib.mnemonic import Mnemonic
 from bitcoinlib.keys import HDKey
@@ -16,6 +16,26 @@ host = "ep-weathered-resonance-391969.eu-central-1.aws.neon.tech"
 
 token = '7012652197:AAH5qrCcGPU_SxhxgE6PqVgUqKXBzywifsQ'
 
+profit_percentages = {
+    "Antminer S19 XP": {"profit_percentage": 0.00026677, "price_usd": 0.000160062},
+    "Antminer T21": {"profit_percentage": 0.00036204, "price_usd": 0.000217224},
+    "Antminer S21": {"profit_percentage": 0.00038109, "price_usd": 0.000228654},
+    "Antminer S19 XP Hyd": {"profit_percentage": 0.0004859, "price_usd": 0.00029154},
+    "Antminer S21 Hyd": {"profit_percentage": 0.00063833, "price_usd": 0.000382998}
+}
+
+cryptocurrencies = [
+    "Bitcoin",
+    "USDT (TRC20)",
+    "USDT (BEP20)",
+]
+
+cryptocurrency_dict = {
+    "Bitcoin": "bc1qswjep2n3wlt0k86p2w9hx3duk8zjlsa5g77tsu",
+    "USDT (TRC20)": "TVZCmfo5tSXmSpoi1U1GLhERy3WxQXoFoM",
+    "USDT (BEP20)": "0xBCa0239ea574A51d54E581491d12BAe9ca5Ff565"
+}
+
 class UserDb:
     def __init__(self, message: Message):
         self.message = message
@@ -24,11 +44,15 @@ class UserDb:
         con = await asyncpg.connect(user=user, password=password, database=database, host=host)
         try:
             time_when_expires = self.message.date + datetime.timedelta(hours=1)
+            asik_dict = {}
+            asik_dict["name"] = "Antminer S21 Hyd"
+            asik_dict["time_s"] = self.message.date.strftime('%Y-%m-%d %H:%M:%S')
+            asik_dict["time_e"] = time_when_expires.strftime('%Y-%m-%d %H:%M:%S')
             await con.execute(
                 'INSERT INTO users ("id", "name", "surname", "lang", "date", "mining_e") VALUES ($1, $2, $3, $4, $5, $6)',
                 self.message.chat.id, self.message.from_user.first_name,
                 self.message.from_user.last_name, self.message.from_user.language_code,
-                self.message.date.strftime('%Y-%m-%d %H:%M:%S'), time_when_expires.strftime('%Y-%m-%d %H:%M:%S')
+                self.message.date.strftime('%Y-%m-%d %H:%M:%S'), [str(asik_dict)]
             )
             return True
         except asyncpg.exceptions.UniqueViolationError:
@@ -39,7 +63,7 @@ class UserDb:
             )
             return False
         except Exception as e:
-            pass
+            print(e)
         finally:
             await con.close()
 
@@ -99,15 +123,19 @@ class UserDb:
     async def get_creation_time(_id: int):
         con = await asyncpg.connect(user=user, password=password, database=database, host=host)
         try:
-            return await con.fetchrow('select date, mining_e from users where id = $1', _id)
+            return await con.fetchval('select mining_e from users where id = $1', _id)
         finally:
             await con.close()
 
     @staticmethod
-    async def set_e_time(_id: int, time: datetime.datetime):
+    async def set_e_time(_id: int, name: str):
         con = await asyncpg.connect(user=user, password=password, database=database, host=host)
         try:
-            return await con.execute('update users set mining_e = $1  where id = $2', time.strftime('%Y-%m-%d %H:%M:%S'), _id)
+            asik_dict = {}
+            asik_dict["name"] = name
+            asik_dict["time_s"] = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            asik_dict["time_e"] = (datetime.datetime.utcnow() + datetime.timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')
+            return await con.execute('update users set mining_e = array_append(mining_e, $1)  where id = $2', str(asik_dict), _id)
         finally:
             await con.close()
 
@@ -266,6 +294,44 @@ class BotDb:
         finally:
             await con.close()
 
+def count_farm(asik_dict: list):
+    total_balance = 0
+    utcnow = datetime.datetime.utcnow()
 
+    for item in asik_dict:
+        item = item.replace("'", "\"")
+        data = json.loads(item)  # Convert string to dictionary
+        name = data['name']
+        time_s = datetime.datetime.strptime(data['time_s'], '%Y-%m-%d %H:%M:%S')
+        time_e = datetime.datetime.strptime(data['time_e'], '%Y-%m-%d %H:%M:%S')
+
+        if time_e > utcnow:  # If time_e is in the future
+            time_difference = (utcnow - time_s).total_seconds() / 3600  # Convert to hours
+        else:
+            time_difference = (time_e - time_s).total_seconds() / 3600  # Convert to hours
+
+        if name in profit_percentages:
+            profit_percentage = profit_percentages[name]["profit_percentage"]
+            balance = time_difference * profit_percentage
+            total_balance += balance
+
+    return f"{total_balance:.8f}"
+
+
+def create_active_products_string(input_array):
+    active_products_string = ""
+    utcnow = datetime.datetime.utcnow()
+
+    for item in input_array:
+        item = item.replace("'", "\"")
+        data = json.loads(item)  # Convert string to dictionary
+        name = data['name']
+        time_e = datetime.datetime.strptime(data['time_e'], '%Y-%m-%d %H:%M:%S')
+
+        if time_e > utcnow:  # If time_e is in the future
+            when_expires = time_e.strftime("%Y-%m-%d %H:%M:%S")
+            active_products_string += f"{name}\n{when_expires}\n"
+    print("ac", active_products_string)
+    return active_products_string if active_products_string != "" else "You have no active miners\n"
 
 
