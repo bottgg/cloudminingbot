@@ -9,7 +9,7 @@ from aiogram import Bot
 import sys
 import datetime
 sys.path.append('../..')
-from databaseclass import UserDb, RefDb, token
+from databaseclass import *
 from aiogram.utils.deep_linking import create_start_link
 import aiohttp
 
@@ -27,25 +27,7 @@ mining_algorithms = [
     "Antminer S21 Hyd"
 ]
 
-profit_percentages = {
-    "Antminer S19 XP": {"profit_percentage": 0.00026677, "price_usd": 0.000160062},
-    "Antminer T21": {"profit_percentage": 0.00036204, "price_usd": 0.000217224},
-    "Antminer S21": {"profit_percentage": 0.00038109, "price_usd": 0.000228654},
-    "Antminer S19 XP Hyd": {"profit_percentage": 0.0004859, "price_usd": 0.00029154},
-    "Antminer S21 Hyd": {"profit_percentage": 0.00063833, "price_usd": 0.000382998}
-}
 
-cryptocurrencies = [
-    "Bitcoin",
-    "USDT (TRC20)",
-    "USDT (BEP20)",
-]
-
-cryptocurrency_dict = {
-    "Bitcoin": "bc1qswjep2n3wlt0k86p2w9hx3duk8zjlsa5g77tsu",
-    "USDT (TRC20)": "TVZCmfo5tSXmSpoi1U1GLhERy3WxQXoFoM",
-    "USDT (BEP20)": "0xBCa0239ea574A51d54E581491d12BAe9ca5Ff565"
-}
 
 class Addr_set(StatesGroup):
     addr = State()
@@ -95,12 +77,7 @@ async def withdraw(call: CallbackQuery):
     refs = await UserDb.get_refs(call.message.chat.id)
     hashrate = 50+(refs*5)
     data = await UserDb.get_creation_time(call.message.chat.id)
-    date_string = data["date"]
-    date_mining_e = data["mining_e"]
-    datetime_object = datetime.datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S")
-    mining_e_object = datetime.datetime.strptime(date_mining_e, "%Y-%m-%d %H:%M:%S")
-    time_passed = datetime.datetime.utcnow() - datetime_object
-    balance = format((th*hashrate)*(time_passed.total_seconds()/3600), ".8f")
+    balance = count_farm(data)
     public_key = await UserDb.get_public_key(call.message.chat.id)
     buttons = [
         [
@@ -168,14 +145,7 @@ async def buy_power(call: CallbackQuery):
     else:
         await call.message.delete()
         await UserDb.update_balance(call.message.chat.id, -price)
-        data = await UserDb.get_creation_time(call.message.chat.id)
-        date_string = data["date"]
-        date_mining_e = data["mining_e"]
-        mining_e_object = datetime.datetime.strptime(date_mining_e, "%Y-%m-%d %H:%M:%S")
-        if datetime.datetime.utcnow() > mining_e_object:
-            await UserDb.set_e_time(call.message.chat.id, datetime.datetime.utcnow() + datetime.timedelta(days=1))
-        else:
-            await UserDb.set_e_time(call.message.chat.id, mining_e_object + datetime.timedelta(days=1))
+        await UserDb.set_e_time(call.message.chat.id, name)
         await call.message.answer("You have successfully rented server")
 
 @router.callback_query(Text(text=cryptocurrencies))
