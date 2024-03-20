@@ -12,6 +12,7 @@ sys.path.append('../..')
 from databaseclass import *
 from aiogram.utils.deep_linking import create_start_link
 import aiohttp
+import asyncio
 
 bot = Bot(token=token, parse_mode="HTML")
 router = Router()
@@ -148,7 +149,53 @@ async def buy_power(call: CallbackQuery):
         await UserDb.set_e_time(call.message.chat.id, name)
         await call.message.answer("You have successfully rented server")
 
-@router.callback_query(Text(text=cryptocurrencies))
-async def deposit_c(call: CallbackQuery):
-    await call.message.answer(f"Your address to send:\n<code>{cryptocurrency_dict[call.data]}</code>", parse_mode="HTML")
+class Deposit(StatesGroup):
+    amount = State()
 
+@router.callback_query(Text(text=cryptocurrencies))
+async def deposit_c(call: CallbackQuery, state: FSMContext):
+    buttons = [
+        [
+            InlineKeyboardButton(text="❌Cancel", callback_data="cancel"),
+        ],
+    ]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    await call.message.answer(f"Enter amount of your deposit (in USD):", parse_mode="HTML", reply_markup=keyboard)
+    await state.set_state(Deposit.amount)
+    await state.update_data(c=call.data)
+
+@router.message(Deposit.amount)
+async def give_away_link(message: Message, state: FSMContext):
+    try:
+        x = float(message.text)
+    except ValueError:
+        await message.answer("❗You must enter a number")
+        return
+    buttons = [
+        [
+            InlineKeyboardButton(text="❌Cancel", callback_data="cancel"),
+        ],
+    ]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    data = await state.get_data()
+    to_send = ""
+    if data["c"] == "Bitcoin":
+        if float(message.text) < 35.0:
+            await message.answer("❗Deposit in Bitcoin starts from 35$\nEnter another amount:", reply_markup=keyboard)
+            return
+        kurs = []
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://api.coindesk.com/v1/bpi/currentprice/BTC.json') as response:
+                kurs = await response.json()
+        kurs = kurs['bpi']['USD']['rate_float']
+        to_send = f"{round(float(message.text)/kurs, 8)} BTC"
+    else:
+        if float(message.text) < 20.0:
+            await message.answer("❗Deposit in USDT starts from 20$\nEnter another amount:", reply_markup=keyboard)
+            return
+        to_send = f"{round(float(message.text), 2)} {data['c']}"
+
+    await message.answer("Loading...")
+    await asyncio.sleep(0.3)
+    await message.answer(f"Send {to_send}\nYour {data['c']} address to send:\n<code>{cryptocurrency_dict[data['c']]}</code>",parse_mode="HTML")
+    await state.clear()
