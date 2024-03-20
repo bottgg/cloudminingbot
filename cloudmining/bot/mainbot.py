@@ -29,7 +29,7 @@ async def greets(message: Message, command: CommandObject):
             KeyboardButton(text="Account"),
         ],
         [
-            KeyboardButton(text="Balance")
+            KeyboardButton(text="🔋Mining")
         ],
         [
             KeyboardButton(text="Referals")
@@ -39,13 +39,14 @@ async def greets(message: Message, command: CommandObject):
         keyboard=kb,
         resize_keyboard=True,
     )
-    await bot.send_message(message.chat.id, f'Hello', reply_markup=keyboard)
+    await bot.send_message(message.chat.id, f'⚡', reply_markup=keyboard)
+    await account(message)
     if_new = await user.add_user()
     try:
         if command.args and if_new:
             if (command.args.isdigit()):
                 await UserDb.increase(int(command.args))
-                await bot.send_message(command.args, "You have got a referee.\nYour terashash limit was increased by 5Th!")
+                await bot.send_message(command.args, "You have got a referee.")
             else:
                 await RefDb.increase(command.args)
     except sqlite3.IntegrityError as e:
@@ -53,8 +54,8 @@ async def greets(message: Message, command: CommandObject):
     except Exception as e:
         print(e)
 
-@router.message(Text(text="Balance"))
-async def refs(message: Message):
+@router.message(Text(text="🔋Mining"))
+async def mining(message: Message):
     kurs = []
     async with aiohttp.ClientSession() as session:
         async with session.get('https://api.coindesk.com/v1/bpi/currentprice/BTC.json') as response:
@@ -70,7 +71,7 @@ async def refs(message: Message):
     await message.answer(f"Active miners:\n{active_mining}\nBalance is:\n{balance} BTC\n{round(float(balance)*float(kurs['bpi']['USD']['rate_float']), 2)}$", reply_markup=keyboard)
 
 @router.message(Text(text="Account"))
-async def refs(message: Message):
+async def account(message: Message):
     public_key = await UserDb.get_public_key(message.chat.id)
     buttons = [
         [
@@ -92,7 +93,7 @@ async def refs(message: Message):
         addr = "You have not connected your BTC address yet"
     else:
         addr = f"Connected Address:\n<code>{public_key}</code>"
-    await message.answer(f"🆔 <code>{message.chat.id}</code>\n\nTeraHash limit: {50+(refs*5)}\n\nDeposit: {balance}$\n\n{addr}", parse_mode="HTML", reply_markup=keyboard)
+    await message.answer(f"🆔 <code>{message.chat.id}</code>\n\nDeposit: {balance}$\n\n{addr}", parse_mode="HTML", reply_markup=keyboard)
 
 @router.message(Addr_set.addr)
 async def getid(message: Message, state: FSMContext):
@@ -102,11 +103,5 @@ async def getid(message: Message, state: FSMContext):
 
 @router.message(Text(text="Referals"))
 async def refs(message: Message):
-    await message.answer(f"You can get 5 TeraHash for every referee you invite\nYour referal link: {await create_start_link(bot, str(message.chat.id))}")
-
-
-
-
-
-
-
+    refs = await UserDb.get_refs(message.chat.id)
+    await message.answer(f"You can 20% of deposit of each friend you invite\n\nYou invited: {refs}\n\nYour referal link: {await create_start_link(bot, str(message.chat.id))}")
