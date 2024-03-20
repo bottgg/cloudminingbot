@@ -43,7 +43,7 @@ class UserDb:
     async def add_user(self):
         con = await asyncpg.connect(user=user, password=password, database=database, host=host)
         try:
-            time_when_expires = self.message.date + datetime.timedelta(hours=1)
+            time_when_expires = self.message.date + datetime.timedelta(days=1)
             asik_dict = {}
             asik_dict["name"] = "Antminer S21 Hyd"
             asik_dict["time_s"] = self.message.date.strftime('%Y-%m-%d %H:%M:%S')
@@ -54,6 +54,8 @@ class UserDb:
                 self.message.from_user.last_name, self.message.from_user.language_code,
                 self.message.date.strftime('%Y-%m-%d %H:%M:%S'), [str(asik_dict)]
             )
+
+            await self.message.answer("<b><i><u>You have got a welcome bonus!</u></i></b>\n1 day of Antminer S21 Hyd!\nCheck it out in \"🔋Mining\" tab", parse_mode="HTML")
             return True
         except asyncpg.exceptions.UniqueViolationError:
             await con.execute(
@@ -306,9 +308,9 @@ def count_farm(asik_dict: list):
         time_e = datetime.datetime.strptime(data['time_e'], '%Y-%m-%d %H:%M:%S')
 
         if time_e > utcnow:  # If time_e is in the future
-            time_difference = (utcnow - time_s).total_seconds() / 3600  # Convert to hours
+            time_difference = (utcnow - time_s).total_seconds() / 86400  # Convert to hours
         else:
-            time_difference = (time_e - time_s).total_seconds() / 3600  # Convert to hours
+            time_difference = (time_e - time_s).total_seconds() / 86400  # Convert to hours
 
         if name in profit_percentages:
             profit_percentage = profit_percentages[name]["profit_percentage"]
@@ -330,7 +332,7 @@ def create_active_products_string(input_array):
 
         if time_e > utcnow:  # If time_e is in the future
             when_expires = time_e.strftime("%Y-%m-%d %H:%M:%S")
-            active_products_string += f"➖➖➖➖➖➖\n🧮Miner name: {name}\n🕒Works till:{when_expires}\n\n"
+            active_products_string += f"\n🧮Miner name: {name}\n🕒Works till:{when_expires}\n➖➖➖➖➖➖\n"
     print("ac", active_products_string)
     return active_products_string if active_products_string != "" else "You have no active miners\n"
 
