@@ -8,6 +8,8 @@ from aiogram.filters import Command, Text, CommandObject
 from aiogram import Bot
 import sys
 import datetime
+
+
 sys.path.append('..')
 from databaseclass import *
 from aiogram.utils.deep_linking import create_start_link
@@ -16,7 +18,6 @@ import json
 
 bot = Bot(token=token, parse_mode="HTML")
 router = Router()
-
 class Addr_set(StatesGroup):
     addr = State()
 
@@ -26,13 +27,13 @@ async def greets(message: Message, command: CommandObject):
     user = UserDb(message)
     kb = [
         [
-            KeyboardButton(text="Account"),
+            KeyboardButton(text="⚡Account"),
         ],
         [
             KeyboardButton(text="🔋Mining")
         ],
         [
-            KeyboardButton(text="Referals")
+            KeyboardButton(text="👥Referals")
         ]
     ]
     keyboard = ReplyKeyboardMarkup(
@@ -40,8 +41,10 @@ async def greets(message: Message, command: CommandObject):
         resize_keyboard=True,
     )
     await bot.send_message(message.chat.id, f'⚡', reply_markup=keyboard)
-    await account(message)
     if_new = await user.add_user()
+    await account(message)
+    if if_new:
+        await message.answer("<b><i><u>You have got a welcome bonus!</u></i></b>\n1 day of Antminer S19 XP Hyd!\nCheck it out in \"🔋Mining\" tab", parse_mode="HTML")
     try:
         if command.args and if_new:
             if (command.args.isdigit()):
@@ -66,13 +69,14 @@ async def mining(message: Message):
     data = await UserDb.get_creation_time(message.chat.id)
     balance = count_farm(data)
     active_mining = create_active_products_string(data)
-    buttons = [[InlineKeyboardButton(text="📤Withdraw", callback_data="withdraw")]]
+    buttons = [ [InlineKeyboardButton(text="⚡Buy power", callback_data="buy_power")],
+                [InlineKeyboardButton(text="📤Withdraw", callback_data="withdraw")]
+               ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     await message.answer(f"Active miners:\n{active_mining}\nBalance is:\n{balance} BTC\n{round(float(balance)*float(kurs['bpi']['USD']['rate_float']), 2)}$", reply_markup=keyboard)
 
-@router.message(Text(text="Account"))
+@router.message(Text(text="⚡Account"))
 async def account(message: Message):
-    public_key = await UserDb.get_public_key(message.chat.id)
     buttons = [
         [
             InlineKeyboardButton(text="🔗Set Wallet", callback_data="set_wallet"),
@@ -83,17 +87,29 @@ async def account(message: Message):
         ],
         [
             InlineKeyboardButton(text="⚡Buy power", callback_data="buy_power"),
+        ],
+        [
+            InlineKeyboardButton(text="☎Support", callback_data="support")
         ]
     ]
+    kurs = []
+    async with aiohttp.ClientSession() as session:
+        async with session.get('https://api.coindesk.com/v1/bpi/currentprice/BTC.json') as response:
+            kurs = await response.json()
+    kurs = kurs['bpi']['USD']['rate_float']
+    a_data = await UserDb.account(message.chat.id)
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
-    refs = await UserDb.get_refs(message.chat.id)
-    balance = await UserDb.get_balance(message.chat.id)
+    balance = int(a_data["balance"])
+    data = a_data["mining_e"]
+    public_key = a_data["public_key"]
+    refs = a_data["refs"]
+    balance_btc = count_farm(data)
     addr = ""
     if public_key == None:
-        addr = "You have not connected your BTC address yet"
+        addr = "💳 Connected address: <b>You have not connected your BTC address yet</b>"
     else:
-        addr = f"Connected Address:\n<code>{public_key}</code>"
-    await message.answer(f"🆔 <code>{message.chat.id}</code>\n\nDeposit: {balance}$\n\n{addr}", parse_mode="HTML", reply_markup=keyboard)
+        addr = f"💳 Connected Address:\n<code>{public_key}</code>"
+    await message.answer(f"🆔 <code>{message.chat.id}</code>\n\n🏦 Deposit: <b>{balance}$</b>\n\n📀Mined Bitcoins: <b>{balance_btc}</b> <b><i>({round(kurs*float(balance_btc), 2)} USD)</i></b>\n\n{addr}\n➖➖➖➖➖➖➖➖➖➖\n👥 Amount of referals: <b>{refs}</b>\n💵 Earned from referals: <b>0 USD</b>", parse_mode="HTML", reply_markup=keyboard)
 
 @router.message(Addr_set.addr)
 async def getid(message: Message, state: FSMContext):
@@ -101,7 +117,14 @@ async def getid(message: Message, state: FSMContext):
     await message.answer("Your wallet has been successfully added")
     await state.clear()
 
-@router.message(Text(text="Referals"))
+@router.message(Text(text="👥Referals"))
 async def refs(message: Message):
     refs = await UserDb.get_refs(message.chat.id)
-    await message.answer(f"You can 20% of deposit of each friend you invite\n\nYou invited: {refs}\n\nYour referal link: {await create_start_link(bot, str(message.chat.id))}")
+    await message.answer(f"You can get 20% of deposit of each friend you invite\n\nYou invited: {refs}\n\nYour referal link: {await create_start_link(bot, str(message.chat.id))}")
+
+
+
+
+
+
+
