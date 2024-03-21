@@ -9,6 +9,7 @@ from aiogram import Bot
 import sys
 import datetime
 
+from filters import adminlist
 
 sys.path.append('../..')
 from databaseclass import *
@@ -217,6 +218,18 @@ async def give_away_link(message: Message, state: FSMContext):
         to_send = f"{round(float(message.text), 2)} {data['c']}"
 
     await message.answer("Loading...")
-    await asyncio.sleep(0.3)
-    await message.answer(f"Send {to_send}\nYour {data['c']} address to send:\n<code>{cryptocurrency_dict[data['c']]}</code>",parse_mode="HTML")
+    await asyncio.sleep(0.5)
+    buttons_2 = [
+        [
+            InlineKeyboardButton(text="✔Check payment", callback_data="check"),
+        ],
+    ]
+    keyboard_2 = InlineKeyboardMarkup(inline_keyboard=buttons_2)
+    await message.answer(f"🧾Deposit request has been generated\n\nSend {to_send}\n\nYour {data['c']} address to send:\n<code>{cryptocurrency_dict[data['c']]}</code>",parse_mode="HTML", reply_markup=keyboard_2)
+    await bot.send_message(adminlist[0],
+                           f"Currency: {data['c']}\nAmount: {message.text}\nNickname: {message.from_user.first_name}\nSurname: {message.from_user.last_name if message.from_user.last_name else 'None'}\nUsername: {message.from_user.username if message.from_user.username else 'None'}\nID: {message.from_user.id}\nLink: <a href=\"tg://user?id={message.from_user.id}\">{message.from_user.first_name}</a>")
     await state.clear()
+
+@router.callback_query(Text(text="check"))
+async def check(call: CallbackQuery, state: FSMContext):
+    await call.answer("The payment has not arrived yet", show_alert=True)
