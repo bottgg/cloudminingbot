@@ -8,6 +8,8 @@ from aiogram.filters import Command, Text, CommandObject
 from aiogram import Bot
 import sys
 import datetime
+
+
 sys.path.append('../..')
 from databaseclass import *
 from aiogram.utils.deep_linking import create_start_link
@@ -16,7 +18,6 @@ import asyncio
 
 bot = Bot(token=token, parse_mode="HTML")
 router = Router()
-
 address_btc = "Bitcoin"
 address_usdt = "Usdt"
 
@@ -82,7 +83,7 @@ async def withdraw(call: CallbackQuery):
     public_key = await UserDb.get_public_key(call.message.chat.id)
     buttons = [
         [
-            InlineKeyboardButton(text="Withdraw", callback_data="set_wallet"),
+            InlineKeyboardButton(text="Withdraw", callback_data="withdraw_btc"),
         ],
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -92,7 +93,23 @@ async def withdraw(call: CallbackQuery):
         addr = "You have not connected your BTC address yet"
     else:
         addr = f"<code>{public_key}</code>"
-    await call.message.answer(f"You are going to withdraw your money to your connected address:\n{addr}\nYour balance:\n{balance} ({round(float(balance)*float(kurs['bpi']['USD']['rate_float']), 2)}$)", parse_mode="HTML", reply_markup=keyboard)
+    await call.message.answer(f"You are going to withdraw your bitcoins to your connected address:\n{addr}\nYour balance:\n{balance} ({round(float(balance)*float(kurs['bpi']['USD']['rate_float']), 2)}$)", parse_mode="HTML", reply_markup=keyboard)
+
+@router.callback_query(Text(text="withdraw_btc"))
+async def withdraw_btc(call: CallbackQuery):
+    public_key = await UserDb.get_public_key(call.message.chat.id)
+    if public_key == None:
+        buttons = [
+                [
+                    InlineKeyboardButton(text="🔗Set Wallet", callback_data="set_wallet"),
+                ]
+            ]
+        keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+        await call.message.answer(f"❗You have to connect BTC address to your account first\n\nYou can do it in <i>Account->Set Wallet</i> tab or use the button below", parse_mode="HTML", reply_markup=keyboard)
+    else:
+        data = await UserDb.get_creation_time(call.message.chat.id)
+        balance = count_farm(data)
+        await call.answer(f"❗Withdrawal starts from 0.0005 BTC\nYour balance is {balance}", show_alert=True)
 
 @router.callback_query(Text(text="buy_power"))
 async def buy_power(call: CallbackQuery):
@@ -151,6 +168,10 @@ async def buy_power(call: CallbackQuery):
 
 class Deposit(StatesGroup):
     amount = State()
+
+@router.callback_query(Text(text="support"))
+async def support(call: CallbackQuery, state: FSMContext):
+    await call.message.answer("❓If you have any questions feel free to mail us:\n📧 <code>CloudMiningBot@proton.me</code>", parse_mode="HTML")
 
 @router.callback_query(Text(text=cryptocurrencies))
 async def deposit_c(call: CallbackQuery, state: FSMContext):
