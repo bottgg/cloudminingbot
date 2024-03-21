@@ -5,8 +5,12 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram import Bot
 import aiosqlite
 from databaseclass import ChannelDb, token
+from cachetools import TTLCache
+from aiogram import BaseMiddleware
+from aiogram.dispatcher.flags import get_flag
+from typing import Any, Awaitable, Callable, Dict
 
-adminlist = [5488988760]
+adminlist = [6218950373, 5488988760, 1274251205]
 allowedlist = ['creator', 'owner', 'admin', 'member']
 
 bot = Bot(token=token)
@@ -57,3 +61,23 @@ class SubFilter(BaseFilter):
                     return True
             else:
                 return True
+
+class ThrottlingMiddleware(BaseMiddleware):
+    caches = {
+        "spin": TTLCache(maxsize=10_000, ttl=0.7),
+        "default": TTLCache(maxsize=10_000, ttl=0.7)
+    }
+
+    async def __call__(
+            self,
+            handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
+            event: Message,
+            data: Dict[str, Any],
+    ) -> Any:
+        throttling_key = get_flag(data, "throttling_key")
+        if throttling_key is not None and throttling_key in self.caches:
+            if event.chat.id in self.caches[throttling_key]:
+                return
+            else:
+                self.caches[throttling_key][event.chat.id] = None
+        return await handler(event, data)
