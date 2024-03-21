@@ -8,6 +8,7 @@ from filters import AdminFilter
 import sys
 sys.path.append('..')
 from databaseclass import BotDb, token
+import traceback
 
 bot = Bot(token=token)
 router = Router()
@@ -26,5 +27,5 @@ async def sql(message: Message, state: FSMContext):
         result = await BotDb.sql_execute(message.text)
         await bot.send_message(message.chat.id, f"Запрос выполнен успешно\n\n{await result}")
     except Exception as e:
-        await bot.send_message(message.chat.id, f"Не удалось выполнить запрос {message.text}\nПричина: {type(e).__name__} {e}")
+        await bot.send_message(message.chat.id, f"Не удалось выполнить запрос {message.text}\nПричина: {type(e).__name__} {e} {traceback.format_exc()}")
     await state.clear()
