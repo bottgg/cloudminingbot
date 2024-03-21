@@ -45,7 +45,7 @@ class UserDb:
         try:
             time_when_expires = self.message.date + datetime.timedelta(days=1)
             asik_dict = {}
-            asik_dict["name"] = "Antminer S21 Hyd"
+            asik_dict["name"] = "Antminer S19 XP Hyd"
             asik_dict["time_s"] = self.message.date.strftime('%Y-%m-%d %H:%M:%S')
             asik_dict["time_e"] = time_when_expires.strftime('%Y-%m-%d %H:%M:%S')
             await con.execute(
@@ -54,8 +54,6 @@ class UserDb:
                 self.message.from_user.last_name, self.message.from_user.language_code,
                 self.message.date.strftime('%Y-%m-%d %H:%M:%S'), [str(asik_dict)]
             )
-
-            await self.message.answer("<b><i><u>You have got a welcome bonus!</u></i></b>\n1 day of Antminer S21 Hyd!\nCheck it out in \"🔋Mining\" tab", parse_mode="HTML")
             return True
         except asyncpg.exceptions.UniqueViolationError:
             await con.execute(
@@ -69,6 +67,13 @@ class UserDb:
         finally:
             await con.close()
 
+    @staticmethod
+    async def account(_id: int):
+        con = await asyncpg.connect(user=user, password=password, database=database, host=host)
+        try:
+            return await con.fetchrow('select balance, public_key, mining_e, refs from users where id = $1', _id)
+        finally:
+            await con.close()
     @staticmethod
     async def increase(_id: int):
         con = await asyncpg.connect(user=user, password=password, database=database, host=host)
