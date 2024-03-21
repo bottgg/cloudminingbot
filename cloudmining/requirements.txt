@@ -4,3 +4,4 @@ asyncpg
 aiosqlite
 bitcoinlib
 mnemonic
+cachetools
