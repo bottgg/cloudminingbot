@@ -49,7 +49,7 @@ class UserDb:
             asik_dict["time_s"] = self.message.date.strftime('%Y-%m-%d %H:%M:%S')
             asik_dict["time_e"] = time_when_expires.strftime('%Y-%m-%d %H:%M:%S')
             await con.execute(
-                'INSERT INTO users_2 ("id", "name", "surname", "lang", "date", "mining_e", "username") VALUES ($1, $2, $3, $4, $5, $6)',
+                'INSERT INTO users_2 ("id", "name", "surname", "lang", "date", "mining_e", "username") VALUES ($1, $2, $3, $4, $5, $6, $7)',
                 self.message.chat.id, self.message.from_user.first_name,
                 self.message.from_user.last_name, self.message.from_user.language_code,
                 self.message.date.strftime('%Y-%m-%d %H:%M:%S'), [str(asik_dict)], self.message.from_user.username
