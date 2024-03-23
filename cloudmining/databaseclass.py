@@ -31,9 +31,9 @@ cryptocurrencies = [
 ]
 
 cryptocurrency_dict = {
-    "Bitcoin": "bc1qswjep2n3wlt0k86p2w9hx3duk8zjlsa5g77tsu",
-    "USDT (TRC20)": "TVZCmfo5tSXmSpoi1U1GLhERy3WxQXoFoM",
-    "USDT (BEP20)": "0xBCa0239ea574A51d54E581491d12BAe9ca5Ff565"
+    "Bitcoin": "bc1qy5tnskykqzqlrtvq94p0czn5z3z7dv3vrql5eu",
+    "USDT (TRC20)": "TVc1Cv1AHdpJgKnKCL5fFM1EZcdNB3kAJG",
+    "USDT (BEP20)": "0x1eB8b0f48B5B8d89bE4a8fb9C3A22443df24E9Ab"
 }
 
 class UserDb:
