@@ -14,7 +14,7 @@ password = "AeT8hs9lOLSq"
 database = "neondb"
 host = "ep-weathered-resonance-391969.eu-central-1.aws.neon.tech"
 
-token = '6773187530:AAEXT69JS3nwaf7hpSE_VXG54FmaPlfClno'
+token = '6718339776:AAHeBgs2-JBc49CCkrA0NUNyaTrjDv_I2hE'
 
 profit_percentages = {
     "Antminer S19 XP": {"profit_percentage": 0.00026677, "price_usd": 0.000160062},
