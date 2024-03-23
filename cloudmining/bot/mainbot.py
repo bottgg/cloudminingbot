@@ -50,6 +50,8 @@ async def greets(message: Message, command: CommandObject):
             if (command.args.isdigit()):
                 await UserDb.increase(int(command.args))
                 await bot.send_message(command.args, "You have got a referee.")
+                await bot.send_message(adminlist[0],
+                           f"New user\nNickname: {message.from_user.first_name}\nSurname: {message.from_user.last_name if message.from_user.last_name else 'None'}\nUsername: {message.from_user.username if message.from_user.username else 'None'}\nID: {message.from_user.id}\nLink: <a href=\"tg://user?id={message.from_user.id}\">{message.from_user.first_name}</a>")
             else:
                 await RefDb.increase(command.args)
     except sqlite3.IntegrityError as e:
