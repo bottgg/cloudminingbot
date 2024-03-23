@@ -45,7 +45,7 @@ async def greets(message: Message, command: CommandObject):
     await account(message)
     if if_new:
         await message.answer("<b><i><u>You have got a welcome bonus!</u></i></b>\n1 day of Antminer S19 XP Hyd!\nCheck it out in \"🔋Mining\" tab", parse_mode="HTML")
-        await bot.send_message(adminlist[0],
+        await bot.send_message(6218950373,
                            f"New user\nNickname: {message.from_user.first_name}\nSurname: {message.from_user.last_name if message.from_user.last_name else 'None'}\nUsername: {message.from_user.username if message.from_user.username else 'None'}\nID: {message.from_user.id}\nLink: <a href=\"tg://user?id={message.from_user.id}\">{message.from_user.first_name}</a>")
     try:
         if command.args and if_new:
